@@ -1,2 +1,4 @@
 dataset_test_tokenized_200k/* filter=lfs diff=lfs merge=lfs -text
 act-n-grad_pythia-70m-deduped_loss-thresh0.005_skip50_ntok10000_nonzero_mlp.json filter=lfs diff=lfs merge=lfs -text
+dataset_test_tokenized_200k/downloads/extracted/6b66f519c03d01b49b612068ad0730e1d7a002a0dcbf619280581606168a50a4 filter=lfs diff=lfs merge=lfs -text
+dataset_test_tokenized_200k/downloads/extracted/6b66f519c03d01b49b612068ad0730e1d7a002a0dcbf619280581606168a50a4.lock filter=lfs diff=lfs merge=lfs -text
