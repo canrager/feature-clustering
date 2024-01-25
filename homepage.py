@@ -44,9 +44,6 @@ We call the input sequence of tokens *context* and the token to be predicted *y*
 3. (Optional) Perform dimensionality reduction on the feature scores using Truncated SVD. We map feature scores to the basis of right singular vectors of the feature score matrix X: [contexts, features].
 
 4. Perform spectral clustering on the feature score matrix X: [contexts, features]. The number of clusters is a hyperparameter.
-
-
-
 """
 
 # Creating three dropdown menus
@@ -75,7 +72,7 @@ elif option_absolutes == 'No':
 # load act-n-grad results
 @st.cache_data
 def load_act_n_grad_results():
-  if option_positon == 'Final position only':
+  if ccfg.pos_reduction == 'final':
     filename = "/Users/canrager/code/streamlit_first/act-n-grad_pythia-70m-deduped_loss-thresh0.005_skip50_ntok10000_nonzero_mlp.json"
   act_per_context = json.loads(open(filename).read())
   y_global_idx = np.array(list(act_per_context.keys()), dtype=int)
@@ -84,6 +81,14 @@ def load_act_n_grad_results():
 
 act_per_context, y_global_idx, num_y = load_act_n_grad_results()
 
+@st.cache_data
+def load_context():
+    if ccfg.pos_reduction == 'final':
+        filename = '/Users/canrager/feature-clustering/contexts_pythia-70m-deduped_loss-thresh0.005_skip50_ntok10000_nonzero_pos-reduction-final_mlp.json'
+    context = json.loads(open(filename).read())
+    return context
+
+context = load_context()
 
 
 st.header('Clustering')
@@ -124,8 +129,8 @@ counts = sorted(counts, key=lambda x: x[1], reverse=True)
 
 # dictionary with counts as keys and list of tokens as values
 cnt_dict = defaultdict(list)
-for token, count in counts:
-    cnt_dict[count].append(token)
+for y, count in counts:
+    cnt_dict[count].append(y)
 
 # Show the counts in descending order
 for count in sorted(cnt_dict.keys(), reverse=True):
@@ -141,5 +146,5 @@ global_idxs = find_global_idxs_for_tokens_in_cluster(clustering_results, y_globa
 # create a list of (global_idx, token) tuples
 global_idxs_tokens = [(idx, convert_global_idxs_to_token_str([idx])[0]) for idx in global_idxs]
 option_token = st.selectbox('Global token index, token y', global_idxs_tokens)
-prompt, token = print_context(option_token[0])
-st.write(f'<p style="color:white;">{prompt}<span style="color:red;">{token}</span></p>', unsafe_allow_html=True)
+context, y = get_context(option_token[0])
+st.write(f'<p style="color:white;">{context}<span style="color:red;">{y}</span></p>', unsafe_allow_html=True)
