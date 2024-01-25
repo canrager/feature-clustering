@@ -23,7 +23,7 @@ from collections import Counter
 #     pred_in_sample_index = idx - starting_indexes[sample_index]
 #     return int(sample_index), int(pred_in_sample_index)
 
-filename = '/Users/canrager/feature-clustering/contexts_pythia-70m-deduped_loss-thresh0.005_skip50_ntok10000_nonzero_pos-reduction-final_mlp.json'
+filename = './contexts_pythia-70m-deduped_loss-thresh0.005_skip50_ntok10000_nonzero_pos-reduction-final_mlp.json'
 context_y = json.loads(open(filename).read())
 
 def get_context(idx):

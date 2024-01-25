@@ -3,9 +3,6 @@ import numpy as np
 import json
 import os
 from collections import defaultdict
-
-import sys
-sys.path.append("/Users/canrager/code/streamlit_first")
 from cluster_exploration import *
 
 class ClusterCfg:
@@ -73,7 +70,7 @@ elif option_absolutes == 'No':
 @st.cache_data
 def load_act_n_grad_results():
   if ccfg.pos_reduction == 'final':
-    filename = "/Users/canrager/code/streamlit_first/act-n-grad_pythia-70m-deduped_loss-thresh0.005_skip50_ntok10000_nonzero_mlp.json"
+    filename = "./act-n-grad_pythia-70m-deduped_loss-thresh0.005_skip50_ntok10000_nonzero_mlp.json"
   act_per_context = json.loads(open(filename).read())
   y_global_idx = np.array(list(act_per_context.keys()), dtype=int)
   num_y = len(act_per_context)
