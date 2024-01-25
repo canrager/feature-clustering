@@ -25,6 +25,7 @@ from collections import Counter
 
 filename = './contexts_pythia-70m-deduped_loss-thresh0.005_skip50_ntok10000_nonzero_pos-reduction-final_mlp.json'
 context_y = json.loads(open(filename).read())
+y_global_idx = np.array(list(context_y.keys()), dtype=int)
 
 def get_context(idx):
     """given idx in range(0, 10658635), return dataset sample
@@ -48,7 +49,7 @@ def convert_global_idxs_to_token_str(idxs):
     """given a list of global indexes, return a list of corresponding token strings"""
     return [context_y[str(idx)]['y'] for idx in idxs]
 
-def find_global_idxs_for_tokens_in_cluster(clustering_results, y_global_idx, cluster_idx, n_total_clusters, abs_scores=False):
+def find_global_idxs_for_tokens_in_cluster(clustering_results, cluster_idx, n_total_clusters, abs_scores=False):
     if abs_scores:
         abs_int = 1
     else:
@@ -59,9 +60,9 @@ def find_global_idxs_for_tokens_in_cluster(clustering_results, y_global_idx, clu
     idxs = y_global_idx[mask]
     return idxs
 
-def return_token_occurrences_in_cluster(clustering_results, y_global_idx, cluster_idx, n_total_clusters, abs_scores=False):
+def return_token_occurrences_in_cluster(clustering_results, cluster_idx, n_total_clusters, abs_scores=False):
     """given a cluster index, return a list of tuples of (token, count) for all unique tokens"""
-    idxs = find_global_idxs_for_tokens_in_cluster(clustering_results, y_global_idx, cluster_idx, n_total_clusters, abs_scores)
+    idxs = find_global_idxs_for_tokens_in_cluster(clustering_results, cluster_idx, n_total_clusters, abs_scores)
     token_strs = convert_global_idxs_to_token_str(idxs)
     counts = Counter(token_strs)
     counts = sorted(counts.items(), key=lambda x: x[1], reverse=True)

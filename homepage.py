@@ -66,27 +66,6 @@ if option_absolutes == 'Yes':
 elif option_absolutes == 'No':
     ccfg.abs_scores = False
 
-# load act-n-grad results
-@st.cache_data
-def load_act_n_grad_results():
-  if ccfg.pos_reduction == 'final':
-    filename = "./act-n-grad_pythia-70m-deduped_loss-thresh0.005_skip50_ntok10000_nonzero_mlp.json"
-  act_per_context = json.loads(open(filename).read())
-  y_global_idx = np.array(list(act_per_context.keys()), dtype=int)
-  num_y = len(act_per_context)
-  return act_per_context, y_global_idx, num_y
-
-act_per_context, y_global_idx, num_y = load_act_n_grad_results()
-
-@st.cache_data
-def load_context():
-    if ccfg.pos_reduction == 'final':
-        filename = '/Users/canrager/feature-clustering/contexts_pythia-70m-deduped_loss-thresh0.005_skip50_ntok10000_nonzero_pos-reduction-final_mlp.json'
-    context = json.loads(open(filename).read())
-    return context
-
-context = load_context()
-
 
 st.header('Clustering')
 option_dim_reduction = st.selectbox('Dimensionality reduction on feature pattern', ('None', 'SVD'))
@@ -121,7 +100,7 @@ if option_n_clusters:
 # Show predicted y
 st.header('y token counts in cluster')
 
-counts = return_token_occurrences_in_cluster(clustering_results, y_global_idx, n_total_clusters=option_n_clusters, cluster_idx=option_cluster_idx, abs_scores=ccfg.abs_scores)
+counts = return_token_occurrences_in_cluster(clustering_results, n_total_clusters=option_n_clusters, cluster_idx=option_cluster_idx, abs_scores=ccfg.abs_scores)
 counts = sorted(counts, key=lambda x: x[1], reverse=True)
 
 # dictionary with counts as keys and list of tokens as values
@@ -139,7 +118,7 @@ for count in sorted(cnt_dict.keys(), reverse=True):
 
 # For a single token selected in a dropdown, show the context using the print_context function
 st.header('Context for selected token')
-global_idxs = find_global_idxs_for_tokens_in_cluster(clustering_results, y_global_idx, cluster_idx=option_cluster_idx, n_total_clusters=option_n_clusters, abs_scores=ccfg.abs_scores)
+global_idxs = find_global_idxs_for_tokens_in_cluster(clustering_results, cluster_idx=option_cluster_idx, n_total_clusters=option_n_clusters, abs_scores=ccfg.abs_scores)
 # create a list of (global_idx, token) tuples
 global_idxs_tokens = [(idx, convert_global_idxs_to_token_str([idx])[0]) for idx in global_idxs]
 option_token = st.selectbox('Global token index, token y', global_idxs_tokens)
