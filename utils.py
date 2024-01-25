@@ -32,8 +32,13 @@ def get_context(idx):
     return context_y[idx]['context'], context_y[idx]['y']
 
 def convert_global_idxs_to_token_str(idxs):
-    """given a list of global indexes, return a list of corresponding token strings"""
-    return [context_y[str(idx)]['y'] for idx in idxs]
+    """given a list of global indexes, return "token\t(document_id: X, global_token_id: Y)" strings"""
+    y = [context_y[str(idx)]['y'] for idx in idxs]
+    doc_idxs = [context_y[str(idx)]['document_idx'] for idx in idxs]
+    token_strs = [f'{y[i]}   (doc {doc_idxs[i]})' for i in range(len(idxs))]
+    # token_strs = [context_y[str(idx)]['y'] + f'\t(in document {context_y[str(idx)]["document_idx"]} with global_token_idx {idx})' for idx in str(idxs)]
+    return token_strs
+
 
 def find_global_idxs_for_tokens_in_cluster(clustering_results, cluster_idx, n_total_clusters, abs_scores=False):
     if abs_scores:
@@ -49,7 +54,7 @@ def find_global_idxs_for_tokens_in_cluster(clustering_results, cluster_idx, n_to
 def return_token_occurrences_in_cluster(clustering_results, cluster_idx, n_total_clusters, abs_scores=False):
     """given a cluster index, return a list of tuples of (token, count) for all unique tokens"""
     idxs = find_global_idxs_for_tokens_in_cluster(clustering_results, cluster_idx, n_total_clusters, abs_scores)
-    token_strs = convert_global_idxs_to_token_str(idxs)
+    token_strs = [context_y[str(idx)]['y'] for idx in idxs]
     counts = Counter(token_strs)
     counts = sorted(counts.items(), key=lambda x: x[1], reverse=True)
     return counts
