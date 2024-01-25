@@ -10,7 +10,7 @@ st.title('Feature pattern explorer')
 """
 > **Unsupervised method for clustering sentences with diverse contexts into groups where similar features are involved for next token prediction.**
 
-### Method
+## Method
 We call the input sequence of tokens *context* and the token to be predicted *y*.
 1. Choose contexts from The Pile where the model achieves low loss on predicting y. 
     (Loss metric: cross-entropy. We choose the minimal loss threshold such that we get 10k contexts. 
@@ -26,7 +26,9 @@ We call the input sequence of tokens *context* and the token to be predicted *y*
 
 
 # Dropdown menus for data preparation
-st.header('Data preparation')
+"""
+## Data preparation
+"""
 _ccfg = ClusterCfg()
 
 option_importance_metric = st.selectbox('Feature score metric', ('Activation', 'Activation * gradient'), index=1)
@@ -59,7 +61,9 @@ clustering_results, cluster_totals = load_cluster_results(_ccfg)
 
 
 # Dropdown menus for inspecting clusters
-st.header('Inspect clusters')
+"""
+## Inspect clusters
+"""
 
 option_n_clusters = st.selectbox('Total number of clusters in algorithm', cluster_totals, index=5)
 if option_n_clusters:
@@ -68,7 +72,9 @@ if option_n_clusters:
 
 
 # Accumulated view of true next tokens y in cluster
-st.header('Counts of true next tokens y in cluster')
+"""
+### Counts of true next tokens y in cluster
+"""
 
 # dictionary with counts as keys and list of tokens as values
 counts = return_token_occurrences_in_cluster(clustering_results, n_total_clusters=option_n_clusters, cluster_idx=option_cluster_idx, abs_scores=_ccfg.abs_scores)
@@ -87,7 +93,10 @@ for count in sorted(cnt_dict.keys(), reverse=True):
 
 
 # For a single token selected in a dropdown, show the preceeding context
-st.header('Context for true next token')
+"""
+### Context for true next token
+"""
+
 # st.write('Select a true token y from the dropdown menu to see the corresponding context. The true token y is printed in red.')
 global_idxs = find_global_idxs_for_tokens_in_cluster(clustering_results, cluster_idx=option_cluster_idx, n_total_clusters=option_n_clusters, abs_scores=_ccfg.abs_scores)
 # create a list of (global_idx, token) tuples
