@@ -88,7 +88,7 @@ for count in sorted(cnt_dict.keys(), reverse=True):
 # For a single token selected in a dropdown, show the preceeding context
 st.subheader('Context for true next token')
 
-# st.write('Select a true token y from the dropdown menu to see the corresponding context. The true token y is printed in red.')
+st.write('Select a true token y from the dropdown menu to see the preceeding context. We display up 100 tokens before the predicted token y, dependent on the context length. The token y is printed in red.')
 global_idxs = find_global_idxs_for_tokens_in_cluster(clustering_results, cluster_idx=option_cluster_idx, n_total_clusters=option_n_clusters, abs_scores=_ccfg.abs_scores)
 # create a list of (global_idx, token) tuples
 global_idxs_tokens = [(idx, convert_global_idxs_to_token_str([idx])[0]) for idx in global_idxs]
