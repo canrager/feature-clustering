@@ -77,7 +77,7 @@ elif option_dim_reduction == 'SVD':
 # Load cluster results
 # @st.cache_data
 def load_cluster_results(_ccfg):
-  clusters_dir = '/Users/canrager/code/streamlit_first/clusters'
+  clusters_dir = './clusters'
   clusters_filename = os.path.join(clusters_dir, f'clusters_{_ccfg.score_type}_{_ccfg.pos_reduction}_{_ccfg.dim_reduction}.json')
   clustering_results = json.loads(open(clusters_filename).read())
   cluster_totals = [ int(s) for s in list(clustering_results.keys()) ]
