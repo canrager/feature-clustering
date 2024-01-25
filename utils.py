@@ -1,49 +1,35 @@
 # %%
+import streamlit as st
+import os
 import json
 import numpy as np
 from collections import Counter
 
+class ClusterCfg:
+  def __init__(self):
+    self.score_type = None
+    self.pos_reduction = None
+    self.abs_scores = None
+    self.dim_reduction = None
 
-# %%
-# Print results
-# Load dataset and helper functions
-# Dataset
-# dataset_canonical = "./dataset_test_tokenized_200k/"
-# dataset = datasets.load_from_disk(dataset_canonical)
-
-# Dataset handling
-# starting_indexes = np.array([0] + list(np.cumsum(dataset["preds_len"])))
-
-# def loss_idx_to_dataset_idx(idx):
-#     """given an idx in range(0, 10658635), return
-#     a sample index in range(0, 20000) and pred-in-sample
-#     index in range(0, 1023). Note token-in-sample idx is
-#     exactly pred-in-sample + 1"""
-#     sample_index = np.searchsorted(starting_indexes, idx, side="right") - 1
-#     pred_in_sample_index = idx - starting_indexes[sample_index]
-#     return int(sample_index), int(pred_in_sample_index)
-
-filename = './contexts_pythia-70m-deduped_loss-thresh0.005_skip50_ntok10000_nonzero_pos-reduction-final_mlp.json'
+filename = './data/contexts_pythia-70m-deduped_loss-thresh0.005_skip50_ntok10000_nonzero_pos-reduction-final_mlp.json'
 context_y = json.loads(open(filename).read())
 y_global_idx = np.array(list(context_y.keys()), dtype=int)
+
+# Load cluster results
+# @st.cache_data
+def load_cluster_results(_ccfg):
+  clusters_dir = './data'
+  clusters_filename = os.path.join(clusters_dir, f'clusters_{_ccfg.score_type}_{_ccfg.pos_reduction}_{_ccfg.dim_reduction}.json')
+  clustering_results = json.loads(open(clusters_filename).read())
+  cluster_totals = [ int(s) for s in list(clustering_results.keys()) ]
+  return clustering_results, cluster_totals
 
 def get_context(idx):
     """given idx in range(0, 10658635), return dataset sample
     and predicted token index within sample, in range(1, 1024)."""
     idx = str(idx)
     return context_y[idx]['context'], context_y[idx]['y']
-
-# def print_context(idx):
-#     """
-#     given idx in range(0, 10658635), print prompt preceding the corresponding
-#     prediction, and highlight the predicted token.
-#     """
-#     sample, token_idx = get_context(idx)
-#     prompt = sample["split_by_token"][:token_idx]
-#     prompt = "".join(prompt)
-#     token = sample["split_by_token"][token_idx]
-#     print(prompt + "\033[41m" + token + "\033[0m")
-#     return prompt, token
 
 def convert_global_idxs_to_token_str(idxs):
     """given a list of global indexes, return a list of corresponding token strings"""
@@ -67,4 +53,3 @@ def return_token_occurrences_in_cluster(clustering_results, cluster_idx, n_total
     counts = Counter(token_strs)
     counts = sorted(counts.items(), key=lambda x: x[1], reverse=True)
     return counts
-
