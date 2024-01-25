@@ -60,7 +60,7 @@ clustering_results, cluster_totals = load_cluster_results(_ccfg)
 # Dropdown menus for inspecting clusters
 st.header('Inspect clusters')
 
-option_n_clusters = st.selectbox('Total number of clusters in algorithm', cluster_totals, index=5)
+option_n_clusters = st.selectbox('Total number of clusters in algorithm', cluster_totals, index=9)
 if option_n_clusters:
     clusters_available = range(1, option_n_clusters + 1)
     option_cluster_idx = st.selectbox('Inspect cluster index', clusters_available, index=9)
@@ -97,7 +97,7 @@ st.write('*Select a true token y from the dropdown menu to its the preceeding co
 global_idxs = find_global_idxs_for_tokens_in_cluster(clustering_results, cluster_idx=option_cluster_idx, n_total_clusters=option_n_clusters, abs_scores=_ccfg.abs_scores)
 # create a list of (global_idx, token) tuples
 global_idxs_tokens_options = convert_global_idxs_to_token_str(global_idxs)
-option_token = st.selectbox('Global token index, true next token y', global_idxs_tokens_options, index=0)
+option_token = st.selectbox('Select token', global_idxs_tokens_options, index=0)
 selected_idx = global_idxs_tokens_options.index(option_token)
 context, y = get_context(global_idxs[selected_idx])
 context = escape(context) # display html tags as text
