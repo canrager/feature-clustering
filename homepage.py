@@ -95,4 +95,5 @@ global_idxs = find_global_idxs_for_tokens_in_cluster(clustering_results, cluster
 global_idxs_tokens = [(idx, convert_global_idxs_to_token_str([idx])[0]) for idx in global_idxs]
 option_token = st.selectbox('Global token index, true token prediction y (printed in red)', global_idxs_tokens)
 context, y = get_context(option_token[0])
-st.write(f'<p {context}<span style="color:red;">{y}</span></p>', unsafe_allow_html=True)
+st.text(context)
+st.write(f'<p<span style="color:red;">{y}</span></p>', unsafe_allow_html=True)
