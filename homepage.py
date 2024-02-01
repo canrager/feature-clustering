@@ -18,9 +18,11 @@ We call the input sequence of tokens *context* and the token to be predicted *y*
 
 2. For each context, we compute a vector of dictionary feature scores. Scores correspond to either 1) Feature activation or 2) Linear effect on loss: activation * gradient (of loss w.r.t. feature activation)
 
-3. (Optional) Perform dimensionality reduction on the feature scores using Truncated SVD. We map feature scores to the basis of right singular vectors of the feature score matrix X: [contexts, features].
-
-4. Perform spectral clustering on the feature score matrix X: [contexts, features]. The number of clusters is a hyperparameter.
+3. Perform spectral clustering on the feature score matrix X: [contexts, features]. 
+    The number of clusters is a hyperparameter. 
+    (Update: We examine the SVD in a separate tab, see index on the left. Previously, we performed dimensionality (Truncated SVD).
+    We mapped feature scores to the basis of right singular vectors of the feature score matrix X: [contexts, features]. 
+    Representing X in sparse format significantly sped up the clustering, so dimensionality reduction is not necessary for clustering.)
 """
 
 
@@ -34,13 +36,13 @@ if option_importance_metric == 'Activation':
 elif option_importance_metric == 'Activation * gradient':
     _ccfg.score_type = 'act-grad'
 
-option_positon = st.selectbox('Reduction of feature pattern across positions', ('Final position only', 'Sum over positions (NOT IMPLEMENTED)', 'No reduction (NOT IMPLEMENTED)'))
+option_positon = st.selectbox('Reduction of feature pattern across positions', ('Sum over positions', 'Final position only', 'No reduction (NOT IMPLEMENTED)'), index=0)
 if option_positon == 'Final position only':
     _ccfg.pos_reduction = 'final'
-elif option_positon == 'Sum over positions (NOT IMPLEMENTED)':
-    _ccfg.pos_reduction = 'final'
-elif option_positon == 'No reduction (NOT IMPLEMENTED)':
-    _ccfg.pos_reduction = 'final'
+elif option_positon == 'Sum over positions':
+    _ccfg.pos_reduction = 'sum'
+elif option_positon == 'No reduction (NOT IMPLEMENTED, default to sum)':
+    _ccfg.pos_reduction = 'sum'
     
 option_absolutes = st.selectbox('Use absolute scores', ('Yes', 'No'), index=1)
 if option_absolutes == 'Yes':
@@ -48,11 +50,11 @@ if option_absolutes == 'Yes':
 elif option_absolutes == 'No':
     _ccfg.abs_scores = False
 
-option_dim_reduction = st.selectbox('Dimensionality reduction on feature pattern', ('None', 'SVD'), index=1)
-if option_dim_reduction == 'None':
-    _ccfg.dim_reduction = "nosvd"
-elif option_dim_reduction == 'SVD':
-    _ccfg.dim_reduction = "svd"
+# option_dim_reduction = st.selectbox('Dimensionality reduction on feature pattern', ('None', 'SVD'), index=0)
+# elif option_dim_reduction == 'SVD':
+#     _ccfg.dim_reduction = "svd"
+# if option_dim_reduction == 'None':
+_ccfg.dim_reduction = "nosvd"
 
 clustering_results, cluster_totals = load_cluster_results(_ccfg)
 
