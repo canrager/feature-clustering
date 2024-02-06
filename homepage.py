@@ -88,10 +88,13 @@ st.header('Inspect cluster')
 # Find number of points in cluster
 global_idxs_in_cluster = find_global_idxs_for_tokens_in_cluster(clustering_results, cluster_idx=option_cluster_idx, n_total_clusters=option_n_clusters, abs_scores=_ccfg.abs_scores)
 n_points = len(global_idxs_in_cluster)
-st.write(f'This cluster contains **{n_points} datapoints** in total.')
+if n_points == 1 :
+    st.write(f'This cluster contains **{n_points} datapoint** in total.')
+else:
+    st.write(f'This cluster contains **{n_points} datapoints** in total.')
 
 # Accumulated view of tokens at selected position in cluster
-st.subheader('Occurences of token at selected position')
+st.subheader('Count token occurences')
 
 option_token = st.selectbox('Select token position', ['final token in context', 'true next token y', 'I want to inspect one of the final 10 tokens in the context'], index=0)
 if option_token == 'final token in context':
@@ -130,7 +133,7 @@ if len(cnt_dict) >= 3:
     # Show the plot in Streamlit
     st.plotly_chart(fig)
 else:
-    st.write('*We will show the distribution of token occurrences if at least one token occurs in the cluster three times or more.*')
+    st.write('*We will show the distribution of token occurrences if at least one token occurs >3 times in the selected cluster.*')
 
 
 # Show the counts in descending order
@@ -151,7 +154,7 @@ for count in sorted(cnt_dict.keys(), reverse=True):
 
 
 # For a single token or interval selected in a dropdown, show the preceeding context
-st.subheader('Browse contexts of true next tokens')
+st.subheader('Browse contexts')
 
 st.write('*Select a true token y from the dropdown menu to its the preceeding context. '+
          'We display up to 100 tokens before the true next token y (highlighted in green), dependent on the context length. '+
