@@ -59,6 +59,7 @@ st.sidebar.header('Cluster choice')
 # Selectbox for the clusters file
 cluster_files = os.listdir("data")
 cluster_files.remove("contexts_pythia-70m-deduped_tloss0.03_ntok10000_skip512_npos10_mlp.json")
+cluster_files.remove("ERIC-QUANTA-CONTEXTS.json")
 cluster_file = st.sidebar.selectbox('Select cluster file', cluster_files)
 with open(f"data/{cluster_file}") as f:
     clusters = json.load(f)
@@ -122,8 +123,12 @@ add_keyboard_shortcuts({
 st.sidebar.write(f"You can use the left and right arrow keys to move quickly between clusters.")
 
 # load up the contexts and the clusters
-with open("data/contexts_pythia-70m-deduped_tloss0.03_ntok10000_skip512_npos10_mlp.json") as f:
-    samples = json.load(f)
+if "QUANTA" in cluster_file:
+    with open("data/ERIC-QUANTA-CONTEXTS.json") as f:
+        samples = json.load(f)
+else:
+    with open("data/contexts_pythia-70m-deduped_tloss0.03_ntok10000_skip512_npos10_mlp.json") as f:
+        samples = json.load(f)
 
 idx_to_token_idx = list(samples.keys())
 
