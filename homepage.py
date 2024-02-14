@@ -1,222 +1,168 @@
+"""
+This script loads the clusters and corresponding contexts from the data folder and
+displays them in a Streamlit app. 
+"""
+
+from collections import defaultdict
+import json
+import os
+
+import numpy as np
+import matplotlib.pyplot as plt
+
 import streamlit as st
-import numpy as np
-from clustering_utils import *
-import plotly.express as px
+from streamlit_shortcuts import add_keyboard_shortcuts
 
-# CSS to apply a light gray background to each token
-token_style = "background-color: #f0f2f6; padding: 2px; margin: 2px; border-radius: 4px;"
+def tokens_to_html(tokens, max_len=150):
+    """Given a list of tokens (strings), returns html for displaying the tokenized text.
+    """
+    newline_tokens = ['\n', '\r', '\r\n', '\v', '\f']
+    html = ""
+    txt = ""
+    if len(tokens) > max_len:
+        html += '<span>...</span>'
+    tokens = tokens[-max_len:]
+    for i, token in enumerate(tokens):
+        background_color = "white" if i != len(tokens) - 1 else "#FF9999"
+        txt += token
+        if all([c in newline_tokens for c in token]):
+            # replace all instances with ⏎
+            token_rep = len(token) * "⏎"
+            brs = "<br>" * len(token)
+            html += f'<span style="border: 1px solid #DDD; background-color: {background_color}; white-space: pre-wrap;">{token_rep}</span>{brs}'
+        else:
+            # replace any $ with \$ to avoid markdown interpretation
+            token = token.replace("$", "\$")
+            # replace any < with &lt; to avoid html interpretation
+            # token = token.replace("<", "&lt;")
+            # replace any > with &gt; to avoid html interpretation
+            # token = token.replace(">", "&gt;")
+            # replace any & with &amp; to avoid html interpretation
+            token = token.replace("&", "&amp;")
+            # replace any _ with \_ to avoid markdown interpretation
+            token = token.replace("_", "\_")
+            # also escape * to avoid markdown interpretation
+            token = token.replace("*", "\*")
+            # there's also an issue with the backtick, so escape it
+            token = token.replace("`", "\`")
 
-
-
-# Set up the title of the page
-st.title('Feature pattern explorer')
-
-# Method description
-"""
-> **Unsupervised method for clustering texts by dictionary features involved for next token prediction.**
-
-## Method
-We call the input sequence of tokens *context* and the token to be predicted *y*.
-1. Choose contexts from The Pile where the model achieves low loss on predicting y. 
-    (Loss metric: cross-entropy. We choose the minimal loss threshold such that we get 10k contexts. 
-    Predicted tokens y are spaced at least 100 tokens from each other to cover a diverse range of contexts.)
-
-2. For each context, we compute a vector of dictionary feature scores. Scores correspond to either 1) Feature activation or 2) Linear effect on loss: activation * gradient (of loss w.r.t. feature activation)
-
-3. Perform spectral clustering on the feature score matrix X: [contexts, features]. 
-    The number of clusters is a hyperparameter. 
-    (Update: We examine the SVD in a separate tab, see index on the left. Previously, we performed dimensionality (Truncated SVD).
-    We mapped feature scores to the basis of right singular vectors of the feature score matrix X: [contexts, features]. 
-    Representing X in sparse format significantly sped up the clustering, so dimensionality reduction is not necessary for clustering.)
-"""
-
-
-
-
-
-
-
-# Dropdown menus for data preparation
-st.header('Choose cluster')
-_ccfg = ClusterCfg()
-
-option_importance_metric = st.selectbox('Feature score metric', ('Activation', 'Activation * gradient'), index=1)
-if option_importance_metric == 'Activation':
-    _ccfg.score_type = 'act'
-elif option_importance_metric == 'Activation * gradient':
-    _ccfg.score_type = 'act-grad'
-
-option_positon = st.selectbox('Reduction of feature pattern across positions', ('Sum over positions', 'Final position only', 'No reduction (NOT IMPLEMENTED)'), index=1)
-if option_positon == 'Final position only':
-    _ccfg.pos_reduction = 'final'
-elif option_positon == 'Sum over positions':
-    _ccfg.pos_reduction = 'sum'
-elif option_positon == 'No reduction (NOT IMPLEMENTED, default to sum)':
-    _ccfg.pos_reduction = 'sum'
-    
-option_absolutes = st.selectbox('Use absolute scores', ('Yes', 'No'), index=1)
-if option_absolutes == 'Yes':
-    _ccfg.abs_scores = True
-elif option_absolutes == 'No':
-    _ccfg.abs_scores = False
-
-# option_dim_reduction = st.selectbox('Dimensionality reduction on feature pattern', ('None', 'SVD'), index=0)
-# elif option_dim_reduction == 'SVD':
-#     _ccfg.dim_reduction = "svd"
-# if option_dim_reduction == 'None':
-_ccfg.dim_reduction = "nosvd"
-
-clustering_results, cluster_totals = load_cluster_results(_ccfg)
-
-
-# Dropdown menus for inspecting clusters
-option_n_clusters = st.selectbox('Total number of clusters in algorithm', cluster_totals, index=9)
-if option_n_clusters:
-    clusters_available = range(1, option_n_clusters + 1)
-    option_cluster_idx = st.selectbox('Inspect cluster index', clusters_available, index=9)
-
-
-
-
-
-
-
-
-
-st.header('Inspect cluster')
-
-# Find number of points in cluster
-global_idxs_in_cluster = find_global_idxs_for_tokens_in_cluster(clustering_results, cluster_idx=option_cluster_idx, n_total_clusters=option_n_clusters, abs_scores=_ccfg.abs_scores)
-n_points = len(global_idxs_in_cluster)
-if n_points == 1 :
-    st.write(f'This cluster contains **{n_points} datapoint** in total.')
-else:
-    st.write(f'This cluster contains **{n_points} datapoints** in total.')
-
-# Accumulated view of tokens at selected position in cluster
-st.subheader('Count token occurences')
-
-option_token = st.selectbox('Select token position', ['final token in context', 'true next token y', 'I want to inspect one of the final 10 tokens in the context'], index=0)
-if option_token == 'final token in context':
-    option_token = -1
-elif option_token == 'true next token y':
-    option_token = 'y'
-elif option_token == 'I want to inspect one of the final 10 tokens in the context':
-    option_token = st.number_input('Enter token position (from -10 to -1, where -1 is the final token in the context)', min_value=-10, max_value=-1, value=-1)
-
-# dictionary with counts as keys and list of tokens as values
-cnt_dict = return_token_occurrences_in_cluster(
-    clustering_results, 
-    n_total_clusters=option_n_clusters, 
-    cluster_idx=option_cluster_idx, 
-    abs_scores=_ccfg.abs_scores,
-    token=option_token)
-
-# Plot the distribution of token occurrences if max count is larger than 4
-if len(cnt_dict) >= 3:
-    # Preparing data
-    occurrences = list(cnt_dict.keys())
-    token_counts = [len(cnt_dict[occ]) for occ in occurrences]
-    tokens = ['<br>'.join(cnt_dict[occ]) for occ in occurrences]
-
-    # Create a bar chart
-    fig = px.bar(x=occurrences, y=token_counts, #[f'Count: {t}' for t in token_counts],
-                title='Distribution of token occurrences at selected position in cluster',
-                labels={'x': 'Number of occurrences', 'y': 'Number of tokens'})
-
-    # Update layout for hover label font size
-    fig.update_layout(xaxis_title='Number of occurrences', 
-                    yaxis_title='Number of unique tokens', 
-                    xaxis_type='category',
-                    yaxis_type='log')
-
-    # Show the plot in Streamlit
-    st.plotly_chart(fig)
-else:
-    st.write('*We will show the distribution of token occurrences if at least one token occurs >3 times in the selected cluster.*')
-
-
-# Show the counts in descending order
-for count in sorted(cnt_dict.keys(), reverse=True):
-    if count == 1:
-        st.markdown(f'**{count} occurence in cluster:**\n')
+            html += f'<span style="border: 1px solid #DDD; background-color: {background_color}; white-space: pre-wrap;">{token}</span>'
+    if "</" in txt:
+        return "CONTEXT NOT LOADED FOR SECURITY REASONS SINCE IT CONTAINS HTML CODE (could contain javascript)."
     else:
-        st.markdown(f'**{count} occurences in cluster:**\n')
-
-    # Wrap each token in a span with the style applied
-    tokens_with_style = [f"<span style='{token_style}'>{token}</span>" for token in cnt_dict[count]]
-    tokens_html = " ".join(tokens_with_style)
-    st.markdown(tokens_html, unsafe_allow_html=True)
+        return html
 
 
+# Create sidebar for selecting clusters file and cluster
+st.sidebar.header('Cluster choice')
 
+# Selectbox for the clusters file
+cluster_files = os.listdir("data")
+cluster_files.remove("contexts_pythia-70m-deduped_tloss0.03_ntok10000_skip512_npos10_mlp.json")
+cluster_files.remove("ERIC-QUANTA-CONTEXTS.json")
+cluster_file = st.sidebar.selectbox('Select cluster file', cluster_files)
+with open(f"data/{cluster_file}") as f:
+    clusters = json.load(f)
 
+# Selectbox for choosing n_clusters
+n_clusters_options = sorted(list(clusters.keys()), key=int)
+n_clusters = st.sidebar.selectbox('n_clusters used in clustering algorithm', n_clusters_options, index=len(n_clusters_options) - 1)
+clusters = clusters[n_clusters] # note that n_clusters is a string
+clusters = clusters[0] # ignore clusters[1], which is based on absolute values
 
+# From the clusters list, create a dictionary mapping cluster index to token indices
+cluster_to_tokens = defaultdict(list)
+for i, cluster in enumerate(clusters):
+    cluster_to_tokens[cluster].append(i)
 
-# For a single token or interval selected in a dropdown, show the preceeding context
-st.subheader('Browse contexts')
+# sort clusters by size (dictionary of rank -> old cluster index)
+new_index_old_index = {i: cluster for i, cluster in enumerate(sorted(cluster_to_tokens, key=lambda k: len(cluster_to_tokens[k]), reverse=True))}    
 
-st.write('*Select a true token y from the dropdown menu to its the preceeding context. '+
-         'We display up to 100 tokens before the true next token y (highlighted in green), dependent on the context length. '+
-         'Each context is sampled from single document in the dataset. Check whether two contexts overlap by comparing the document number in the dropdown.*')
+def get_idx(cluster_file, n_clusters):
+    if cluster_file not in st.session_state:
+        st.session_state[cluster_file] = dict()
+    if n_clusters not in st.session_state[cluster_file]:
+        st.session_state[cluster_file][n_clusters] = int(n_clusters) // 2
+    return st.session_state[cluster_file][n_clusters]
 
-def display_one_context():
-    global_idxs_tokens_options = convert_global_idxs_to_token_str(global_idxs_in_cluster)
-    option_token = st.selectbox('Select token', global_idxs_tokens_options, index=0)
-    selected_idx = global_idxs_tokens_options.index(option_token)
-    context, y = get_context(global_idxs_in_cluster[selected_idx])
-    render_context_y(context, y)
+def increment_idx(cluster_file, n_clusters):
+    st.session_state[cluster_file][n_clusters] += 1
+    return st.session_state[cluster_file][n_clusters]
 
-if n_points == 1:
-    display_one_context()
-    
+def decrement_idx(cluster_file, n_clusters):
+    st.session_state[cluster_file][n_clusters] -= 1
+    return st.session_state[cluster_file][n_clusters]
+
+def set_idx(cluster_file, n_clusters, idx):
+    st.session_state[cluster_file][n_clusters] = idx
+    return st.session_state[cluster_file][n_clusters]
+
+# choose a cluster index
+cluster_idx = st.sidebar.selectbox('Select cluster index', range(int(n_clusters)), index=get_idx(cluster_file, n_clusters))
+set_idx(cluster_file, n_clusters, cluster_idx)
+
+def left_callback():
+    decrement_idx(cluster_file, n_clusters)
+
+def right_callback():
+    increment_idx(cluster_file, n_clusters)
+
+# these don't take any action. fix this:
+if st.sidebar.button('Previous cluster', on_click=left_callback):
+    pass
+if st.sidebar.button('Next cluster', on_click=right_callback):
+    pass
+
+# add keyboard shortcuts
+add_keyboard_shortcuts({
+    "ArrowLeft": "Previous cluster",
+    "ArrowRight": "Next cluster"
+})
+
+# add text to the sidebar
+st.sidebar.write(f"You can use the left and right arrow keys to move quickly between clusters.")
+
+# load up the contexts and the clusters
+if "QUANTA" in cluster_file:
+    with open("data/ERIC-QUANTA-CONTEXTS.json") as f:
+        samples = json.load(f)
 else:
-    # Selectbox for the amount of points to display
-    n_points_options = np.array([1, 5, 10, 20, 50])
-    n_points_options = n_points_options[n_points_options <= n_points]
-    if n_points not in n_points_options: # Provide option to display all points
-        n_points_options = np.append(n_points_options, n_points)
-        n_points_options = np.sort(n_points_options)
+    with open("data/contexts_pythia-70m-deduped_tloss0.03_ntok10000_skip512_npos10_mlp.json") as f:
+        samples = json.load(f)
 
-    n_points_to_display = st.selectbox('Select number of contexts to display', n_points_options, index=1)
-    if n_points_to_display == 1:
-        display_one_context()
-    else:
-        # Select the group index of points to display
-        first_group_idxs = np.arange(0, n_points, n_points_to_display)
-        group_intervals = [
-            np.arange(idx, min(n_points, idx + n_points_to_display))\
-            for idx in first_group_idxs
-            ]
+idx_to_token_idx = list(samples.keys())
 
-        group_intervals_str = [f'{group[0]} - {group[-1]}' for group in group_intervals]
-        group_intervals_map = {group_intervals_str[i]: group_intervals[i] for i in range(len(group_intervals_str))}
-        option_group_str = st.selectbox('Select interval', group_intervals_str, index=0)
-        selected_group_interval = group_intervals_map[option_group_str]
+# write as large bolded heading the cluster index
+st.write(f"## Cluster {cluster_idx}")
 
-        # global_idxs_tokens_options = convert_global_idxs_to_token_str(global_idxs)
-        # option_token = st.selectbox('Select token', global_idxs_tokens_options, index=0)
-        # selected_idx = global_idxs_tokens_options.index(option_token)
-        contexts, ys = get_contexts(global_idxs_in_cluster[selected_group_interval])
-        # Format context to be rendered as plain text, not markdown
-        for i, context, y in zip(selected_group_interval, contexts, ys):
-            st.write(f'#### Context {i}:\n')
-            render_context_y(context, y)
+# get a histogram of the top 'y' tokens in the cluster
+counts = defaultdict(int)
+for i in cluster_to_tokens[new_index_old_index[cluster_idx]]:
+    sample = samples[idx_to_token_idx[i]]
+    y = sample['y']
+    counts[y] += 1
 
+# plot the histogram for the top 10 tokens with matplotlib
+top_10 = sorted(counts, key=counts.get, reverse=True)[:10]
+top_10_counts = [counts[y] for y in top_10]
+# convert the top 10 tokens to literals (i.e. newlines and tabs are escaped)
+top_10 = [repr(y)[1:-1] for y in top_10]
+plt.figure(figsize=(6, 2))
+plt.bar(top_10, top_10_counts)
+plt.xlabel('Token', fontsize=8)
+plt.ylabel('Count', fontsize=8)
+plt.title('Top 10 tokens in cluster (answer tokens)', fontsize=8)
+# rotate the tick labels
+plt.xticks(rotation=45, fontsize=9)
+plt.yticks(fontsize=8)
+st.pyplot(plt)
 
+for i in cluster_to_tokens[new_index_old_index[cluster_idx]]:
+    sample = samples[idx_to_token_idx[i]]
+    context = sample['context']
+    y = sample['y']
+    tokens = context + [y]
+    html = tokens_to_html(tokens)
+    st.write("-----------------------------------------------------------")
+    st.write(html, unsafe_allow_html=True)
 
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-# Test Playground
-    
-import numpy as np
-n_points = 13
-n_points_to_display = 5
-
-# Select the group index of points to display
-first_group_idxs = np.arange(0, n_points, n_points_to_display)
-group_intervals = [
-    np.arange(idx, min(n_points, idx + n_points_to_display))\
-    for idx in first_group_idxs
-    ]
-
-# %%
