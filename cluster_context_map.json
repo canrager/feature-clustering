@@ -1,6 +1,6 @@
 {
     "lin_effects_posfinal_nsamples8192_nctx64.json": "samples8192.json",
     "activations_posfinal_nsamples8192_nctx64.json": "samples8192.json",
-    "ERIC-QUANTA-CLUSTERS-ACTIVATIONS.json": "ERIC-QUANTA-CONTEXYS.json",
-    "ERIC-QUANTA-CLUSTERS-GRADIENTS.json": "ERIC-QUANTA-CONTEXYS.json"
+    "ERIC-QUANTA-CLUSTERS-ACTIVATIONS.json": "ERIC-QUANTA-CONTEXTS.json",
+    "ERIC-QUANTA-CLUSTERS-GRADIENTS.json": "ERIC-QUANTA-CONTEXTS.json"
 }
