@@ -57,18 +57,18 @@ def tokens_to_html(tokens, max_len=150):
 st.sidebar.header('Cluster choice')
 
 # Selectbox for the clusters file
-cluster_files = os.listdir("data")
-cluster_files.remove("contexts_pythia-70m-deduped_tloss0.03_ntok10000_skip512_npos10_mlp.json")
-cluster_files.remove("ERIC-QUANTA-CONTEXTS.json")
+cluster_files = os.listdir("clusters")
 cluster_file = st.sidebar.selectbox('Select cluster file', cluster_files)
-with open(f"data/{cluster_file}") as f:
+with open(f"clusters/{cluster_file}") as f:
     clusters = json.load(f)
+
 
 # Selectbox for choosing n_clusters
 n_clusters_options = sorted(list(clusters.keys()), key=int)
 n_clusters = st.sidebar.selectbox('n_clusters used in clustering algorithm', n_clusters_options, index=len(n_clusters_options) - 1)
 clusters = clusters[n_clusters] # note that n_clusters is a string
-clusters = clusters[0] # ignore clusters[1], which is based on absolute values
+if "ERIC" in cluster_file:
+    clusters = clusters[0] # ignore clusters[1], which is based on absolute values
 
 # From the clusters list, create a dictionary mapping cluster index to token indices
 cluster_to_tokens = defaultdict(list)
@@ -102,10 +102,12 @@ cluster_idx = st.sidebar.selectbox('Select cluster index', range(int(n_clusters)
 set_idx(cluster_file, n_clusters, cluster_idx)
 
 def left_callback():
-    decrement_idx(cluster_file, n_clusters)
+    if cluster_idx > 0:
+        decrement_idx(cluster_file, n_clusters)
 
 def right_callback():
-    increment_idx(cluster_file, n_clusters)
+    if cluster_idx < int(n_clusters) - 1:
+        increment_idx(cluster_file, n_clusters)
 
 # these don't take any action. fix this:
 if st.sidebar.button('Previous cluster', on_click=left_callback):
@@ -123,12 +125,10 @@ add_keyboard_shortcuts({
 st.sidebar.write(f"You can use the left and right arrow keys to move quickly between clusters.")
 
 # load up the contexts and the clusters
-if "QUANTA" in cluster_file:
-    with open("data/ERIC-QUANTA-CONTEXTS.json") as f:
-        samples = json.load(f)
-else:
-    with open("data/contexts_pythia-70m-deduped_tloss0.03_ntok10000_skip512_npos10_mlp.json") as f:
-        samples = json.load(f)
+with open("cluster_context_map.json") as f:
+    context_filename = json.load(f)[cluster_file]
+with open(f"contexts/{context_filename}") as f:
+    samples = json.load(f)
 
 idx_to_token_idx = list(samples.keys())
 
@@ -139,7 +139,7 @@ st.write(f"## Cluster {cluster_idx}")
 counts = defaultdict(int)
 for i in cluster_to_tokens[new_index_old_index[cluster_idx]]:
     sample = samples[idx_to_token_idx[i]]
-    y = sample['y']
+    y = sample['answer']
     counts[y] += 1
 
 # plot the histogram for the top 10 tokens with matplotlib
@@ -160,7 +160,7 @@ st.pyplot(plt)
 for i in cluster_to_tokens[new_index_old_index[cluster_idx]]:
     sample = samples[idx_to_token_idx[i]]
     context = sample['context']
-    y = sample['y']
+    y = sample['answer']
     tokens = context + [y]
     html = tokens_to_html(tokens)
     st.write("-----------------------------------------------------------")
