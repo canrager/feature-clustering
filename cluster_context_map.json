@@ -1,10 +1,10 @@
 {
-    "lin_effects_posfinal_nsamples8192_nctx64.json": "samples8192.json",
-    "activations_posfinal_nsamples8192_nctx64.json": "samples8192.json",
-    "clusters_activations_sum-over-pos_nsamples8192_nctx64.json": "samples8192.json",
-    "clusters_lin_effects_sum-over-pos_nsamples8192_nctx64.json": "samples8192.json",
-    "clusters_lin_effects_final-5-pos_nsamples8192_nctx64.json": "samples8192.json",
-    "clusters_activations_final-5-pos_nsamples8192_nctx64.json": "samples8192.json",
+    "activations_sum-over-pos_nsamples8192_nctx64.json": "samples8192.json",
+    "lin_effects_sum-over-pos_nsamples8192_nctx64.json": "samples8192.json",
+    "lin_effects_final-1-pos_nsamples8192_nctx64.json": "samples8192.json",
+    "activations_final-1-pos_nsamples8192_nctx64.json": "samples8192.json",
+    "lin_effects_final-5-pos_nsamples8192_nctx64.json": "samples8192.json",
+    "activations_final-5-pos_nsamples8192_nctx64.json": "samples8192.json",
     "ERIC-QUANTA-CLUSTERS-ACTIVATIONS.json": "ERIC-QUANTA-CONTEXTS.json",
     "ERIC-QUANTA-CLUSTERS-GRADIENTS.json": "ERIC-QUANTA-CONTEXTS.json"
 }
