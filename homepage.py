@@ -76,7 +76,7 @@ for i, cluster in enumerate(clusters):
     cluster_to_tokens[cluster].append(i)
 
 # sort clusters by size (dictionary of rank -> old cluster index)
-new_index_old_index = {i: cluster for i, cluster in enumerate(sorted(cluster_to_tokens, key=lambda k: len(cluster_to_tokens[k]), reverse=True))}    
+new_index_old_index = {i: cluster for i, cluster in enumerate(sorted(cluster_to_tokens, key=lambda k: len(cluster_to_tokens[k]), reverse=True))}
 
 def get_idx(cluster_file, n_clusters):
     if cluster_file not in st.session_state:
