@@ -166,3 +166,12 @@ for i in cluster_to_tokens[new_index_old_index[cluster_idx]]:
     st.write("-----------------------------------------------------------")
     st.write(html, unsafe_allow_html=True)
 
+# Download the cluster contexts as a json file
+sample_filename = f"samples-nclusters{n_clusters}-clusteridx{cluster_idx}-" + cluster_file.split(".")[0] + ".json"
+samples_to_download = {idx_to_token_idx[i]: samples[idx_to_token_idx[i]] for i in cluster_to_tokens[new_index_old_index[cluster_idx]]}
+st.sidebar.download_button(
+    label= f"Download cluster {cluster_idx} as JSON",
+    data=json.dumps(samples_to_download, indent=4),
+    file_name=sample_filename,
+    mime="application/json"
+)
